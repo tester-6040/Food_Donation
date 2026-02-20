@@ -1,8 +1,15 @@
 <?php
+$scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+$detectedBasePath = '';
+if (is_string($scriptName) && $scriptName !== '') {
+    $dir = str_replace('\\', '/', dirname($scriptName));
+    $detectedBasePath = $dir === '/' || $dir === '.' ? '' : rtrim($dir, '/');
+}
+
 return [
     'app_name' => 'Food Donation Platform',
     'base_url' => getenv('APP_URL') ?: 'http://localhost:8000',
-    'base_path' => rtrim(getenv('APP_BASE_PATH') ?: '', '/'),
+    'base_path' => rtrim(getenv('APP_BASE_PATH') ?: $detectedBasePath, '/'),
     'db' => [
         'host' => getenv('DB_HOST') ?: '127.0.0.1',
         'port' => getenv('DB_PORT') ?: '3306',

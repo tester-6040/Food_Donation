@@ -77,7 +77,7 @@ README.md
    - `DB_USER`
    - `DB_PASS`
    - `MAIL_FROM`
-   - `APP_BASE_PATH` (use this when hosting in subfolder, e.g. `/Food_Donation-main`)
+   - `APP_BASE_PATH` (optional override; if omitted, app auto-detects subfolder from `SCRIPT_NAME`)
 
 3. Ensure `storage/mail.log` is writable:
    ```bash
