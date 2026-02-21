@@ -77,6 +77,7 @@ README.md
    - `DB_USER`
    - `DB_PASS`
    - `MAIL_FROM`
+   - Optional legacy mail keys supported: `admin_email`, `secondary_admin_email` (in config file)
    - `APP_BASE_PATH` (optional override; if omitted, app auto-detects subfolder from `SCRIPT_NAME`)
 
 3. Ensure `storage/mail.log` is writable:

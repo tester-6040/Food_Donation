@@ -4,13 +4,13 @@ class DonationController extends Controller
 {
     private Donation $donations;
     private User $users;
-    private Mailer $mailer;
+    private mixed $mailer;
 
     public function __construct()
     {
         $this->donations = new Donation();
         $this->users = new User();
-        $this->mailer = new Mailer();
+        $this->mailer = class_exists('Mailer') ? new Mailer() : null;
     }
 
     public function create(): void
@@ -44,7 +44,7 @@ class DonationController extends Controller
         ]);
 
         $app = require __DIR__ . '/../config/app.php';
-        $admins = array_values(array_unique($app['mail']['admin_recipients']));
+        $admins = $this->adminRecipients($app);
 
         $adminBody = "New Donation Submitted\n"
             . "----------------------\n"
@@ -68,8 +68,8 @@ class DonationController extends Controller
             . "Current Status: pending review by admin\n"
             . "\nWe appreciate your support in feeding children in need.";
 
-        $this->mailer->send($admins, 'New Donation Submitted', $adminBody);
-        $this->mailer->send($user['email'], 'Thanks for Donating', $donorBody);
+        $this->sendMail($admins, 'New Donation Submitted', $adminBody, $app);
+        $this->sendMail($user['email'], 'Thanks for Donating', $donorBody, $app);
 
         Session::flash('success', 'Donation submitted successfully.');
         $this->redirect('/dashboard');
@@ -112,7 +112,8 @@ class DonationController extends Controller
                 . "Quantity: {$donation['quantity']}\n"
                 . "Pickup Address: {$donation['pickup_address']}\n"
                 . "\nPlease login and Accept/Reject this donation.";
-            $this->mailer->send($orphanage['email'], 'Donation Assigned for You', $orphanageBody);
+            $app = require __DIR__ . '/../config/app.php';
+            $this->sendMail($orphanage['email'], 'Donation Assigned for You', $orphanageBody, $app);
         }
 
         Session::flash('success', 'Donation assigned successfully.');
@@ -151,10 +152,50 @@ class DonationController extends Controller
                 . "Food: {$donation['title']}\n"
                 . "Pickup Address: {$donation['pickup_address']}\n"
                 . "\nThank you again for your valuable support.";
-            $this->mailer->send($donor['email'], 'Donation Status Updated', $donorBody);
+            $app = require __DIR__ . '/../config/app.php';
+            $this->sendMail($donor['email'], 'Donation Status Updated', $donorBody, $app);
         }
 
         Session::flash('success', 'Donation status updated.');
         $this->redirect('/dashboard');
+    }
+
+    private function adminRecipients(array $app): array
+    {
+        $mail = $app['mail'] ?? [];
+        $recipients = $mail['admin_recipients'] ?? [];
+        if (isset($mail['admin_email'])) {
+            $recipients[] = $mail['admin_email'];
+        }
+        if (isset($mail['secondary_admin_email'])) {
+            $recipients[] = $mail['secondary_admin_email'];
+        }
+        return array_values(array_unique(array_filter($recipients)));
+    }
+
+    private function sendMail(array|string $to, string $subject, string $message, array $app): void
+    {
+        if (is_object($this->mailer) && method_exists($this->mailer, 'send')) {
+            $this->mailer->send($to, $subject, $message);
+            return;
+        }
+
+        if (class_exists('Core\\Mailer') && method_exists('Core\\Mailer', 'send') && class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+            foreach ((array) $to as $email) {
+                if (is_string($email) && $email !== '') {
+                    \Core\Mailer::send($email, $subject, $message, $app['mail'] ?? []);
+                }
+            }
+            return;
+        }
+
+        if (class_exists('Mailer')) {
+            $fallback = new Mailer();
+            $fallback->send($to, $subject, $message);
+            return;
+        }
+
+        $line = sprintf("[%s] MAILER_UNAVAILABLE TO:%s | SUBJECT:%s\n", date('c'), implode(',', (array) $to), $subject);
+        @file_put_contents(__DIR__ . '/../storage/mail.log', $line, FILE_APPEND);
     }
 }
