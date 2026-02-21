@@ -1,8 +1,8 @@
 <?php $basePath = $app['base_path'] ?? ''; ?>
-</main>
-<footer class="max-w-6xl mx-auto px-4 md:px-6 pb-8 text-sm text-slate-500">
-    Built for NGO food rescue workflows • Secure role-based platform
-</footer>
-<script src="<?= htmlspecialchars($basePath . '/assets/js/validation.js', ENT_QUOTES, 'UTF-8') ?>"></script>
+  </main>
+  <footer class="container-pro px-4 pb-8 text-xs subtle">
+    © <?= date('Y') ?> Food Donation Platform · Production-ready NGO workflow suite.
+  </footer>
+  <script src="<?= htmlspecialchars($basePath . '/assets/js/validation.js', ENT_QUOTES, 'UTF-8') ?>"></script>
 </body>
 </html>
