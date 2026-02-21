@@ -10,9 +10,10 @@
             <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" name="quantity" required placeholder="Quantity (e.g. 30 meals)">
             <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" name="pickup_address" required placeholder="Pickup address">
             <div class="grid grid-cols-2 gap-3">
-                <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" step="any" type="number" name="pickup_latitude" placeholder="Latitude">
-                <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" step="any" type="number" name="pickup_longitude" placeholder="Longitude">
+                <input id="donation-latitude" class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" step="any" type="number" name="pickup_latitude" placeholder="Latitude">
+                <input id="donation-longitude" class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" step="any" type="number" name="pickup_longitude" placeholder="Longitude">
             </div>
+            <button type="button" data-fill-location data-lat-target="#donation-latitude" data-lng-target="#donation-longitude" class="w-full border border-slate-300 text-slate-700 px-4 py-2.5 rounded-lg hover:bg-slate-50">Use current pickup location</button>
             <button class="w-full bg-teal-600 text-white px-4 py-2.5 rounded-lg hover:bg-teal-700">Submit Donation</button>
         </form>
     </div>

@@ -13,9 +13,10 @@
         </select>
         <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" name="address" placeholder="Address">
         <div class="grid grid-cols-2 gap-3">
-            <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" type="number" step="any" name="latitude" placeholder="Latitude">
-            <input class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" type="number" step="any" name="longitude" placeholder="Longitude">
+            <input id="register-latitude" class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" type="number" step="any" name="latitude" placeholder="Latitude">
+            <input id="register-longitude" class="focus-ring w-full border border-slate-300 rounded-lg px-3 py-2.5" type="number" step="any" name="longitude" placeholder="Longitude">
         </div>
+        <button type="button" data-fill-location data-lat-target="#register-latitude" data-lng-target="#register-longitude" class="w-full border border-slate-300 text-slate-700 py-2.5 rounded-lg hover:bg-slate-50">Use current location</button>
         <button class="w-full bg-teal-600 text-white py-2.5 rounded-lg hover:bg-teal-700">Create account</button>
     </form>
 </div>

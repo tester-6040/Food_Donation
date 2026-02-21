@@ -74,14 +74,18 @@ class Donation extends BaseModel
             return null;
         }
 
+        if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            return null;
+        }
+
         $sql = 'SELECT id, name, email, address, latitude, longitude,
-                (6371 * ACOS(COS(RADIANS(:lat)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(:lng)) + SIN(RADIANS(:lat)) * SIN(RADIANS(latitude)))) AS distance_km
+                (6371 * ACOS(COS(RADIANS(:lat1)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(:lng)) + SIN(RADIANS(:lat2)) * SIN(RADIANS(latitude)))) AS distance_km
                 FROM users
                 WHERE role = :role AND latitude IS NOT NULL AND longitude IS NOT NULL
                 ORDER BY distance_km ASC
                 LIMIT 1';
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':lat' => $lat, ':lng' => $lng, ':role' => 'orphanage']);
+        $stmt->execute([':lat1' => $lat, ':lat2' => $lat, ':lng' => $lng, ':role' => 'orphanage']);
         return $stmt->fetch() ?: null;
     }
 
