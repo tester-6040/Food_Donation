@@ -65,11 +65,16 @@ README.md
 ```
 
 ## Setup
-1. Create database and tables:
+1. Install dependencies (for SMTP with PHPMailer):
+   ```bash
+   composer install
+   ```
+
+2. Create database and tables:
    ```bash
    mysql -u root -p < schema.sql
    ```
-2. Configure environment (optional defaults exist):
+3. Configure environment (optional defaults exist):
    - `APP_URL`
    - `DB_HOST`
    - `DB_PORT`
@@ -77,10 +82,12 @@ README.md
    - `DB_USER`
    - `DB_PASS`
    - `MAIL_FROM`
+   - `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`
+   - `MAIL_FROM_NAME`, `ADMIN_EMAIL`, `SECONDARY_ADMIN_EMAIL`
    - Optional legacy mail keys supported: `admin_email`, `secondary_admin_email` (in config file)
    - `APP_BASE_PATH` (optional override; if omitted, app auto-detects subfolder from `SCRIPT_NAME`)
 
-3. Ensure `storage/mail.log` is writable:
+4. Ensure `storage/mail.log` is writable:
    ```bash
    touch storage/mail.log
    chmod 664 storage/mail.log
@@ -186,3 +193,11 @@ The app sends separate formatted emails for each role-based event:
 - Donors: **Thanks for Donating** confirmation email.
 - Orphanages: **Donation Assigned for You** after admin assignment.
 - Donors also receive **Donation Status Updated** when orphanage accepts/rejects.
+
+
+## SMTP Test
+Run SMTP test after configuring mail credentials:
+```bash
+php test_mail.php
+```
+This sends a test email using `Core\Mailer` + PHPMailer.

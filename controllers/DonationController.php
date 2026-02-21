@@ -4,13 +4,11 @@ class DonationController extends Controller
 {
     private Donation $donations;
     private User $users;
-    private mixed $mailer;
 
     public function __construct()
     {
         $this->donations = new Donation();
         $this->users = new User();
-        $this->mailer = class_exists('Mailer') ? new Mailer() : null;
     }
 
     public function create(): void
@@ -46,30 +44,30 @@ class DonationController extends Controller
         $app = require __DIR__ . '/../config/app.php';
         $admins = $this->adminRecipients($app);
 
-        $adminBody = "New Donation Submitted\n"
-            . "----------------------\n"
-            . "Donation ID: #{$donationId}\n"
-            . "Donor: {$user['name']} ({$user['email']})\n"
-            . "Title: {$title}\n"
-            . "Quantity: {$quantity}\n"
-            . "Pickup Address: {$pickupAddress}\n"
-            . "Coordinates: " . ($pickupLat !== '' && $pickupLng !== '' ? "{$pickupLat}, {$pickupLng}" : 'Not provided') . "\n"
-            . "Status: pending\n"
-            . "\nPlease assign this donation to an orphanage from admin dashboard.";
+        $adminBody = $this->htmlMail('New Donation Submitted', [
+            "Donation ID: #{$donationId}",
+            "Donor: {$user['name']} ({$user['email']})",
+            "Title: {$title}",
+            "Quantity: {$quantity}",
+            "Pickup Address: {$pickupAddress}",
+            'Coordinates: ' . ($pickupLat !== '' && $pickupLng !== '' ? "{$pickupLat}, {$pickupLng}" : 'Not provided'),
+            'Status: pending',
+            'Please assign this donation to an orphanage from admin dashboard.',
+        ]);
 
-        $donorBody = "Thank You for Donating\n"
-            . "----------------------\n"
-            . "Dear {$user['name']},\n"
-            . "Your donation has been received successfully.\n"
-            . "Donation ID: #{$donationId}\n"
-            . "Food: {$title}\n"
-            . "Quantity: {$quantity}\n"
-            . "Pickup Address: {$pickupAddress}\n"
-            . "Current Status: pending review by admin\n"
-            . "\nWe appreciate your support in feeding children in need.";
+        $donorBody = $this->htmlMail('Thanks for Donating', [
+            "Dear {$user['name']},",
+            'Your donation has been received successfully.',
+            "Donation ID: #{$donationId}",
+            "Food: {$title}",
+            "Quantity: {$quantity}",
+            "Pickup Address: {$pickupAddress}",
+            'Current Status: pending review by admin',
+            'We appreciate your support in feeding children in need.',
+        ]);
 
-        $this->sendMail($admins, 'New Donation Submitted', $adminBody, $app);
-        $this->sendMail($user['email'], 'Thanks for Donating', $donorBody, $app);
+        $this->sendMail($admins, 'New Donation Submitted', $adminBody, $app['mail']);
+        $this->sendMail($user['email'], 'Thanks for Donating', $donorBody, $app['mail']);
 
         Session::flash('success', 'Donation submitted successfully.');
         $this->redirect('/dashboard');
@@ -103,17 +101,17 @@ class DonationController extends Controller
 
         $orphanage = $this->users->findById($orphanageId);
         if ($orphanage) {
-            $orphanageBody = "Donation Assigned for You\n"
-                . "------------------------\n"
-                . "Dear {$orphanage['name']},\n"
-                . "A new donation has been assigned to your orphanage.\n"
-                . "Donation ID: #{$donationId}\n"
-                . "Food: {$donation['title']}\n"
-                . "Quantity: {$donation['quantity']}\n"
-                . "Pickup Address: {$donation['pickup_address']}\n"
-                . "\nPlease login and Accept/Reject this donation.";
             $app = require __DIR__ . '/../config/app.php';
-            $this->sendMail($orphanage['email'], 'Donation Assigned for You', $orphanageBody, $app);
+            $orphanageBody = $this->htmlMail('Donation Assigned for You', [
+                "Dear {$orphanage['name']},",
+                'A new donation has been assigned to your orphanage.',
+                "Donation ID: #{$donationId}",
+                "Food: {$donation['title']}",
+                "Quantity: {$donation['quantity']}",
+                "Pickup Address: {$donation['pickup_address']}",
+                'Please login and Accept/Reject this donation.',
+            ]);
+            $this->sendMail($orphanage['email'], 'Donation Assigned for You', $orphanageBody, $app['mail']);
         }
 
         Session::flash('success', 'Donation assigned successfully.');
@@ -145,15 +143,15 @@ class DonationController extends Controller
 
         $donor = $this->users->findById((int) $donation['donor_id']);
         if ($donor) {
-            $donorBody = "Donation Status Update\n"
-                . "---------------------\n"
-                . "Dear {$donor['name']},\n"
-                . "Your donation #{$donationId} has been {$newStatus} by {$orphanage['name']}.\n"
-                . "Food: {$donation['title']}\n"
-                . "Pickup Address: {$donation['pickup_address']}\n"
-                . "\nThank you again for your valuable support.";
             $app = require __DIR__ . '/../config/app.php';
-            $this->sendMail($donor['email'], 'Donation Status Updated', $donorBody, $app);
+            $donorBody = $this->htmlMail('Donation Status Updated', [
+                "Dear {$donor['name']},",
+                "Your donation #{$donationId} has been {$newStatus} by {$orphanage['name']}.",
+                "Food: {$donation['title']}",
+                "Pickup Address: {$donation['pickup_address']}",
+                'Thank you again for your valuable support.',
+            ]);
+            $this->sendMail($donor['email'], 'Donation Status Updated', $donorBody, $app['mail']);
         }
 
         Session::flash('success', 'Donation status updated.');
@@ -164,38 +162,42 @@ class DonationController extends Controller
     {
         $mail = $app['mail'] ?? [];
         $recipients = $mail['admin_recipients'] ?? [];
-        if (isset($mail['admin_email'])) {
+        if (!empty($mail['admin_email'])) {
             $recipients[] = $mail['admin_email'];
         }
-        if (isset($mail['secondary_admin_email'])) {
+        if (!empty($mail['secondary_admin_email'])) {
             $recipients[] = $mail['secondary_admin_email'];
         }
         return array_values(array_unique(array_filter($recipients)));
     }
 
-    private function sendMail(array|string $to, string $subject, string $message, array $app): void
+    private function sendMail(array|string $to, string $subject, string $message, array $mailConfig): void
     {
-        if (is_object($this->mailer) && method_exists($this->mailer, 'send')) {
-            $this->mailer->send($to, $subject, $message);
-            return;
-        }
-
-        if (class_exists('Core\\Mailer') && method_exists('Core\\Mailer', 'send') && class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
-            foreach ((array) $to as $email) {
-                if (is_string($email) && $email !== '') {
-                    \Core\Mailer::send($email, $subject, $message, $app['mail'] ?? []);
-                }
+        foreach ((array) $to as $email) {
+            if (!is_string($email) || $email === '') {
+                continue;
             }
-            return;
+            if (class_exists('Core\\Mailer')) {
+                \Core\Mailer::send($email, $subject, $message, $mailConfig);
+            } else {
+                $line = sprintf("[%s] Core\\Mailer missing TO:%s SUBJECT:%s\n", date('c'), $email, $subject);
+                @file_put_contents(__DIR__ . '/../storage/mail.log', $line, FILE_APPEND);
+            }
+        }
+    }
+
+    private function htmlMail(string $heading, array $lines): string
+    {
+        $safeHeading = htmlspecialchars($heading, ENT_QUOTES, 'UTF-8');
+        $items = '';
+        foreach ($lines as $line) {
+            $items .= '<li style="margin:6px 0;">' . htmlspecialchars($line, ENT_QUOTES, 'UTF-8') . '</li>';
         }
 
-        if (class_exists('Mailer')) {
-            $fallback = new Mailer();
-            $fallback->send($to, $subject, $message);
-            return;
-        }
-
-        $line = sprintf("[%s] MAILER_UNAVAILABLE TO:%s | SUBJECT:%s\n", date('c'), implode(',', (array) $to), $subject);
-        @file_put_contents(__DIR__ . '/../storage/mail.log', $line, FILE_APPEND);
+        return '<div style="font-family:Arial,sans-serif;line-height:1.5;color:#111">'
+            . '<h2 style="color:#0f766e;margin-bottom:10px;">' . $safeHeading . '</h2>'
+            . '<ul style="padding-left:18px;margin:0;">' . $items . '</ul>'
+            . '<p style="margin-top:14px;color:#475569;">Food Donation Platform</p>'
+            . '</div>';
     }
 }

@@ -1,5 +1,10 @@
 <?php
 
+$autoload = __DIR__ . '/vendor/autoload.php';
+if (is_file($autoload)) {
+    require $autoload;
+}
+
 require __DIR__ . '/core/Database.php';
 require __DIR__ . '/core/BaseModel.php';
 require __DIR__ . '/core/Session.php';
